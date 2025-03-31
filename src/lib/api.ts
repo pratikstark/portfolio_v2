@@ -198,7 +198,7 @@ export const getWebsiteSettings = async (): Promise<Record<string, WebsiteSettin
   
   // Convert to object with section as key
   return data.reduce((acc, setting) => {
-    acc[setting.section] = setting;
+    acc[setting.section] = setting as WebsiteSettings;
     return acc;
   }, {} as Record<string, WebsiteSettings>);
 };

@@ -70,6 +70,6 @@ export interface WebsiteSettings {
   section: string;
   visible: boolean | null;
   order_index: number | null;
-  settings: Record<string, any> | null;
+  settings: any | null; // Changed from Record<string, any> to any to fix the type error
   updated_at: string | null;
 }
