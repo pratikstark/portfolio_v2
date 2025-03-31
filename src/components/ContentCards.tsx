@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Briefcase, 
   GraduationCap, 
@@ -9,15 +9,74 @@ import {
   X 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+  getQualifications, 
+  getWorkExperience, 
+  getCaseStudies, 
+  getBlogPosts 
+} from "@/lib/api";
+import { 
+  Qualification, 
+  WorkExperience, 
+  CaseStudy, 
+  BlogPost,
+  WebsiteSettings
+} from "@/types/supabase";
+import { useNavigate } from "react-router-dom";
 
 type ContentCategory = "qualifications" | "work" | "caseStudies" | "blogs" | null;
 
-const ContentCards = () => {
+interface ContentCardsProps {
+  settings?: WebsiteSettings;
+}
+
+const ContentCards: React.FC<ContentCardsProps> = ({ settings }) => {
   const [activeCategory, setActiveCategory] = useState<ContentCategory>(null);
+  const [qualifications, setQualifications] = useState<Qualification[]>([]);
+  const [workExperience, setWorkExperience] = useState<WorkExperience[]>([]);
+  const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [quals, work, cases, blogs] = await Promise.all([
+          getQualifications(),
+          getWorkExperience(),
+          getCaseStudies(),
+          getBlogPosts()
+        ]);
+        
+        setQualifications(quals);
+        setWorkExperience(work);
+        setCaseStudies(cases);
+        setBlogPosts(blogs);
+      } catch (error) {
+        console.error("Error fetching content data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   const closeDetails = () => {
     setActiveCategory(null);
   };
+
+  const handleViewDetails = (id: string, type: 'case-study' | 'blog-post') => {
+    navigate(`/${type}/${id}`);
+    closeDetails();
+  };
+
+  // If section is set to not visible, don't render anything
+  if (settings && settings.visible === false) {
+    return null;
+  }
 
   const cards = [
     {
@@ -29,23 +88,23 @@ const ContentCards = () => {
         <div className="space-y-6">
           <h3 className="text-2xl font-bold mb-6">Education & Certifications</h3>
           
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Master's in Psychology</h4>
-            <p className="text-sm text-foreground/70">University of Psychology, 2018</p>
-            <p className="mt-2">Specialized in cognitive psychology and user behavior analysis.</p>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">UX Design Certification</h4>
-            <p className="text-sm text-foreground/70">Design Institute, 2019</p>
-            <p className="mt-2">Focused on user-centered design methodologies and practices.</p>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Full-Stack Development Bootcamp</h4>
-            <p className="text-sm text-foreground/70">Tech Academy, 2020</p>
-            <p className="mt-2">Intensive training in modern web development technologies and practices.</p>
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : qualifications.length === 0 ? (
+            <p className="text-center text-foreground/70">No qualifications found.</p>
+          ) : (
+            qualifications.map(qualification => (
+              <div key={qualification.id} className="glass-card p-6 rounded-lg">
+                <h4 className="text-lg font-semibold">{qualification.title}</h4>
+                <p className="text-sm text-foreground/70">{qualification.institution}, {qualification.year}</p>
+                {qualification.description && (
+                  <p className="mt-2">{qualification.description}</p>
+                )}
+              </div>
+            ))
+          )}
         </div>
       ),
     },
@@ -58,23 +117,23 @@ const ContentCards = () => {
         <div className="space-y-6">
           <h3 className="text-2xl font-bold mb-6">Professional Experience</h3>
           
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Senior UX Developer</h4>
-            <p className="text-sm text-foreground/70">Digital Innovations Inc., 2020 - Present</p>
-            <p className="mt-2">Lead the development of user-centered web applications, combining psychological insights with modern development practices.</p>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">UX Designer</h4>
-            <p className="text-sm text-foreground/70">Creative Solutions, 2018 - 2020</p>
-            <p className="mt-2">Designed user interfaces for various clients, focusing on creating intuitive and engaging user experiences.</p>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Research Assistant</h4>
-            <p className="text-sm text-foreground/70">University Psychology Lab, 2016 - 2018</p>
-            <p className="mt-2">Conducted research on user behavior and cognitive processes in digital environments.</p>
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : workExperience.length === 0 ? (
+            <p className="text-center text-foreground/70">No work experience found.</p>
+          ) : (
+            workExperience.map(work => (
+              <div key={work.id} className="glass-card p-6 rounded-lg">
+                <h4 className="text-lg font-semibold">{work.title}</h4>
+                <p className="text-sm text-foreground/70">{work.company}, {work.period}</p>
+                {work.description && (
+                  <p className="mt-2">{work.description}</p>
+                )}
+              </div>
+            ))
+          )}
         </div>
       ),
     },
@@ -87,32 +146,29 @@ const ContentCards = () => {
         <div className="space-y-6">
           <h3 className="text-2xl font-bold mb-6">Case Studies</h3>
           
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">E-Commerce Redesign</h4>
-            <p className="text-sm text-foreground/70">Category: UX/UI, Psychology</p>
-            <p className="mt-2">Redesigned an e-commerce platform using psychological principles to increase user engagement and conversion rates by 32%.</p>
-            <button className="mt-4 text-primary flex items-center text-sm">
-              View Case Study <ArrowRight size={16} className="ml-1" />
-            </button>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Mental Health App</h4>
-            <p className="text-sm text-foreground/70">Category: Design, Development</p>
-            <p className="mt-2">Developed a mobile application for mental health tracking, combining psychological insights with intuitive design.</p>
-            <button className="mt-4 text-primary flex items-center text-sm">
-              View Case Study <ArrowRight size={16} className="ml-1" />
-            </button>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Corporate Website Overhaul</h4>
-            <p className="text-sm text-foreground/70">Category: Development, UX</p>
-            <p className="mt-2">Completely redesigned and developed a corporate website, focusing on user needs and business goals.</p>
-            <button className="mt-4 text-primary flex items-center text-sm">
-              View Case Study <ArrowRight size={16} className="ml-1" />
-            </button>
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : caseStudies.length === 0 ? (
+            <p className="text-center text-foreground/70">No case studies found.</p>
+          ) : (
+            caseStudies.map(caseStudy => (
+              <div key={caseStudy.id} className="glass-card p-6 rounded-lg">
+                <h4 className="text-lg font-semibold">{caseStudy.title}</h4>
+                <p className="text-sm text-foreground/70">Category: {caseStudy.category}</p>
+                {caseStudy.description && (
+                  <p className="mt-2">{caseStudy.description}</p>
+                )}
+                <button 
+                  className="mt-4 text-primary flex items-center text-sm"
+                  onClick={() => handleViewDetails(caseStudy.id, 'case-study')}
+                >
+                  View Case Study <ArrowRight size={16} className="ml-1" />
+                </button>
+              </div>
+            ))
+          )}
         </div>
       ),
     },
@@ -125,32 +181,35 @@ const ContentCards = () => {
         <div className="space-y-6">
           <h3 className="text-2xl font-bold mb-6">Blog Posts</h3>
           
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">The Psychology of User Interfaces</h4>
-            <p className="text-sm text-foreground/70">Published: January 15, 2023</p>
-            <p className="mt-2">Exploring how psychological principles can inform better UI design decisions.</p>
-            <button className="mt-4 text-primary flex items-center text-sm">
-              Read Post <ArrowRight size={16} className="ml-1" />
-            </button>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Bridging Design and Development</h4>
-            <p className="text-sm text-foreground/70">Published: March 22, 2023</p>
-            <p className="mt-2">How designers and developers can work together more effectively for cohesive products.</p>
-            <button className="mt-4 text-primary flex items-center text-sm">
-              Read Post <ArrowRight size={16} className="ml-1" />
-            </button>
-          </div>
-          
-          <div className="glass-card p-6 rounded-lg">
-            <h4 className="text-lg font-semibold">Cognitive Load in Web Applications</h4>
-            <p className="text-sm text-foreground/70">Published: June 10, 2023</p>
-            <p className="mt-2">Understanding and managing cognitive load to create more user-friendly applications.</p>
-            <button className="mt-4 text-primary flex items-center text-sm">
-              Read Post <ArrowRight size={16} className="ml-1" />
-            </button>
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : blogPosts.length === 0 ? (
+            <p className="text-center text-foreground/70">No blog posts found.</p>
+          ) : (
+            blogPosts.map(post => (
+              <div key={post.id} className="glass-card p-6 rounded-lg">
+                <h4 className="text-lg font-semibold">{post.title}</h4>
+                <p className="text-sm text-foreground/70">
+                  Published: {new Date(post.publish_date || Date.now()).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
+                {post.summary && (
+                  <p className="mt-2">{post.summary}</p>
+                )}
+                <button 
+                  className="mt-4 text-primary flex items-center text-sm"
+                  onClick={() => handleViewDetails(post.id, 'blog-post')}
+                >
+                  Read Post <ArrowRight size={16} className="ml-1" />
+                </button>
+              </div>
+            ))
+          )}
         </div>
       ),
     },
@@ -168,28 +227,34 @@ const ContentCards = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cards.map((card, index) => (
-            <div
-              key={card.id}
-              className={cn(
-                "glass-card rounded-xl p-6 transition-all duration-300 cursor-pointer reveal opacity-0 hover:border-primary/50 hover:shadow-lg",
-                activeCategory === card.id ? "border-primary/50" : ""
-              )}
-              style={{ transitionDelay: `${index * 0.1}s` }}
-              onClick={() => setActiveCategory(card.id as ContentCategory)}
-            >
-              <div className="bg-primary/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6">
-                {card.icon}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {cards.map((card, index) => (
+              <div
+                key={card.id}
+                className={cn(
+                  "glass-card rounded-xl p-6 transition-all duration-300 cursor-pointer reveal opacity-0 hover:border-primary/50 hover:shadow-lg",
+                  activeCategory === card.id ? "border-primary/50" : ""
+                )}
+                style={{ transitionDelay: `${index * 0.1}s` }}
+                onClick={() => setActiveCategory(card.id as ContentCategory)}
+              >
+                <div className="bg-primary/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                  {card.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
+                <p className="text-foreground/70">{card.description}</p>
+                <button className="mt-4 text-primary flex items-center text-sm">
+                  View Details <ArrowRight size={16} className="ml-1" />
+                </button>
               </div>
-              <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
-              <p className="text-foreground/70">{card.description}</p>
-              <button className="mt-4 text-primary flex items-center text-sm">
-                View Details <ArrowRight size={16} className="ml-1" />
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Full-screen details view */}
         {activeCategory && (

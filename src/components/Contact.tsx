@@ -1,36 +1,63 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Send, Download } from "lucide-react";
 import { toast } from "sonner";
+import { submitContactForm } from "@/lib/api";
+import { WebsiteSettings } from "@/types/supabase";
 
-const Contact = () => {
+interface ContactProps {
+  settings?: WebsiteSettings;
+}
+
+const Contact: React.FC<ContactProps> = ({ settings }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would connect to Supabase
-    console.log("Form submitted:", formData);
-    toast.success("Message sent successfully! I'll get back to you soon.", {
-      description: "Thanks for reaching out!",
-    });
+    setIsSubmitting(true);
     
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: ""
-    });
+    try {
+      const success = await submitContactForm(
+        formData.name,
+        formData.email,
+        formData.subject,
+        formData.message
+      );
+      
+      if (success) {
+        toast.success("Message sent successfully! I'll get back to you soon.", {
+          description: "Thanks for reaching out!",
+        });
+        
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: ""
+        });
+      } else {
+        toast.error("Failed to send message.", {
+          description: "Please try again later.",
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("An error occurred while sending your message.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDownloadResume = () => {
@@ -39,6 +66,11 @@ const Contact = () => {
       description: "The resume would download in a real implementation.",
     });
   };
+
+  // If section is set to not visible, don't render anything
+  if (settings && settings.visible === false) {
+    return null;
+  }
 
   return (
     <section id="contact" className="py-20 bg-background relative">
@@ -118,10 +150,17 @@ const Contact = () => {
               
               <button
                 type="submit"
-                className="w-full flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                <Send size={18} className="mr-2" />
-                Send Message
+                {isSubmitting ? (
+                  "Sending..."
+                ) : (
+                  <>
+                    <Send size={18} className="mr-2" />
+                    Send Message
+                  </>
+                )}
               </button>
             </form>
           </div>

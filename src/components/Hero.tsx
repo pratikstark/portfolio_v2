@@ -1,13 +1,28 @@
 
 import React, { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { WebsiteSettings } from "@/types/supabase";
 
-const Hero = () => {
+interface HeroProps {
+  settings?: WebsiteSettings;
+}
+
+const Hero: React.FC<HeroProps> = ({ settings }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  // If section is set to not visible, don't render anything
+  if (settings && settings.visible === false) {
+    return null;
+  }
+
+  // Get title and subtitle from settings if available
+  const title = settings?.settings?.title || "Psychology. Design. Code.";
+  const subtitle = settings?.settings?.subtitle || 
+    "Creating thoughtful digital experiences that merge psychological insights with elegant design and efficient code.";
 
   return (
     <section
@@ -23,13 +38,20 @@ const Hero = () => {
           }`}
         >
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tighter mb-6">
-            <span className="block text-primary animate-pulse-slow">Psychology.</span> 
-            <span className="block delay-300">Design.</span> 
-            <span className="block text-primary animate-pulse-slow delay-500">Code.</span>
+            {title.split('.').map((part, index) => (
+              <span 
+                key={index} 
+                className={`block ${index % 2 === 0 ? 'text-primary animate-pulse-slow' : ''} ${
+                  index === 1 ? 'delay-300' : index === 2 ? 'delay-500' : ''
+                }`}
+              >
+                {part.trim()}{index < title.split('.').length - 1 ? '.' : ''}
+              </span>
+            ))}
           </h1>
           
           <p className="text-lg md:text-xl text-foreground/70 max-w-3xl mx-auto mb-10 animate-fade-in opacity-0" style={{ animationDelay: "0.8s", animationFillMode: "forwards" }}>
-            Creating thoughtful digital experiences that merge psychological insights with elegant design and efficient code.
+            {subtitle}
           </p>
           
           <div className="animate-fade-in opacity-0" style={{ animationDelay: "1.2s", animationFillMode: "forwards" }}>

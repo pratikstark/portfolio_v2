@@ -1,8 +1,13 @@
 
 import React, { useEffect, useRef } from "react";
 import { User, Lightbulb, Code } from "lucide-react";
+import { WebsiteSettings } from "@/types/supabase";
 
-const About = () => {
+interface AboutProps {
+  settings?: WebsiteSettings;
+}
+
+const About: React.FC<AboutProps> = ({ settings }) => {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -30,6 +35,11 @@ const About = () => {
       });
     };
   }, []);
+
+  // If section is set to not visible, don't render anything
+  if (settings && settings.visible === false) {
+    return null;
+  }
 
   return (
     <section
